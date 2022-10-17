@@ -4,3 +4,10 @@ A music player for seamless loop based on Panda3D to give an authentic feel to t
 If you would like to build this into an executable, I highly recommend using Nuitka-Python (https://github.com/Nuitka/Nuitka-Python)! A guide for building will come soon!
 
 Do note: This project was only started a few weeks ago, so bugs are probably going to appear, but I would be grateful if you would like to make pull requests, or report issues!
+
+This works with Python 3.10, and future versions
+
+# Installing Panda3D
+Once you have installed Python (https://python.org/) you can run the following command
+
+`pip install panda3d`

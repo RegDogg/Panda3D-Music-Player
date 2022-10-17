@@ -10,4 +10,4 @@ This works with Python 3.10, and future versions
 # Installing Panda3D
 Once you have installed Python (https://python.org/) you can run the following command
 
-`pip install panda3d`
+```pip install panda3d```

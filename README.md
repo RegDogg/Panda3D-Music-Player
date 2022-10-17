@@ -7,9 +7,13 @@ Do note: This project was only started a few weeks ago, so bugs are probably goi
 
 This works with Python 3.10, and future versions
 
-# Installing Panda3D
+# Installing Panda3D and PyQt5
 Once you have installed Python (https://python.org/) you can run the following command
 
 ```sh
 pip install panda3d
+```
+
+```sh
+pip install pyqt5
 ```

@@ -36,7 +36,6 @@ class MusicApp(ShowBase):
         genericGUI = loader.loadModel('models/models/gui/ttr_m_gui_gen_buttons')
         self.scrubberBar = genericGUI.find('**/ttr_t_gui_gen_buttons_lineSkinny')
         self.scrubberButton = genericGUI.find('**/ttr_t_gui_gen_buttons_slider1')
-        self.scrubberButton.setScale(0.1, 0.1, 0.1)
 
         inventoryGUI = loader.loadModel('models/models/gui/ttr_m_gui_bat_inventoryGUI')
         browseButton = inventoryGUI.find('**/gagButton')
@@ -81,6 +80,8 @@ class MusicApp(ShowBase):
                 file = filename.replace('%s:/' % (file), '/%s/' % (file.lower()))
                 self.loadMusicFile(file)
                 self.playButton['state'] = DGG.NORMAL
+        if self.mySound:
+            self.mySound.play()
 
     def pauseMusic(self):
         time = self.mySound.getTime()
@@ -143,15 +144,8 @@ class MusicApp(ShowBase):
         self.mySound.setVolume(1)
         self.mySound.play()
 
-    def unload(self):
-        if self.mySound:
-            self.mySound.stop()
-        del self.mySound
-
-
 app = MusicApp()
 try:
     app.run()
 except SystemExit:
     exit()
-    app.unload()

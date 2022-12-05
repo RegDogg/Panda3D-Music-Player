@@ -11,9 +11,5 @@ This works with Python 3.10, and future versions
 Once you have installed Python (https://python.org/) you can run the following command
 
 ```sh
-pip install panda3d
-```
-
-```sh
-pip install pyqt5
+pip install -r requirements.txt
 ```

@@ -4,15 +4,9 @@ from panda3d.core import loadPrcFile, VirtualFileSystem, Filename, Loader
 from direct.gui.DirectGui import *
 from PyQt5 import QtWidgets
 import sys
-import os
-import re
 
 '''Setup the Panda3D environment with our config file'''
 loadPrcFile('main.prc')
-
-'''Prepare VFS'''
-vfs = VirtualFileSystem.getGlobalPtr()
-vfs.mount(Filename('models'), Filename('models'), 0)
 
 class MusicApp(ShowBase):
 

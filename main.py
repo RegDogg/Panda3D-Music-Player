@@ -1,6 +1,7 @@
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 from panda3d.core import loadPrcFile, VirtualFileSystem, Filename, Loader
+from direct.interval.IntervalGlobal import LerpFunc
 from direct.gui.DirectGui import *
 from PyQt5 import QtWidgets
 import sys
@@ -12,8 +13,9 @@ class MusicApp(ShowBase):
 
     def __init__(self):
         ShowBase.__init__(self)
-        base.musicManager.setConcurrentSoundLimit(1)
+        base.musicManager.setConcurrentSoundLimit(2)
         self.mySound = None
+        self.myFadeSound = None
         self.setupGUI()
 
     def setupGUI(self):
@@ -53,12 +55,22 @@ class MusicApp(ShowBase):
         self.browseButton = DirectButton(relief=None, geom=((browseButtonUp,
                                                             browseButtonDown,
                                                             browseButtonUp,
-                                                            browseButtonHover)), parent=aspect2d, text='Browse', text_font=loader.loadFont('models/fonts/ImpressBT.ttf'), scale=(2, 4, 1), text_scale=(0.2, 0.4, 1), pos=(-1.7, 0, -0.7), text_pos=(0, -0.1, 0), geom_color=(0, 0.52, 0.86, 1), text_fg=(1, 1, 1, 1), command=self.selectFile)
+                                                            browseButtonHover)), parent=aspect2d, text='Browse', text_font=loader.loadFont('models/fonts/ImpressBT.ttf'), scale=(1.5, 4, 0.75), text_scale=(0.2, 0.4, 1), pos=(-1.9, 0, -0.75), text_pos=(0, -0.1, 0), geom_color=(0, 0.52, 0.86, 1), text_fg=(1, 1, 1, 1), command=self.selectFile)
 
-        self.maxTime = OnscreenText(parent=aspect2d, text='', font=loader.loadFont('models/fonts/ImpressBT.ttf'), scale=0.25, pos=(1.75, -0.35), fg=(1, 1, 1, 1))
-        self.currentTime = OnscreenText(parent=aspect2d, text='', font=loader.loadFont('models/fonts/ImpressBT.ttf'), scale=0.25, pos=(-1.75, -0.35), fg=(1, 1, 1, 1))
+        self.fadeButton = DirectButton(relief=None, geom=((browseButtonUp,
+                                                            browseButtonDown,
+                                                            browseButtonUp,
+                                                            browseButtonHover)), parent=aspect2d, text='Fade to...', text_font=loader.loadFont('models/fonts/ImpressBT.ttf'), scale=(1.5, 4, 0.75), text_scale=(0.15, 0.3, 1), pos=(1.9, 0, -0.75), text_pos=(0, -0.1, 0), geom_color=(0, 0.52, 0.86, 1), text_fg=(1, 1, 1, 1), command=self.musicFadeIn)
 
-        self.scrubber = DirectSlider(range=(0,100), scale=(2, 1, 1), geom=self.scrubberBar, geom_scale=(0.5, 1, 1), relief=None, thumb_geom=self.scrubberButton, thumb_geom_scale=(0.25, 0.25, 0.25), thumb_frameSize=(-0.1, 0.1, -0.1, 0.1), thumb_relief=None, thumb_command=self.setTime, thumb_extraArgs=[True], value=0, pageSize=100, command=self.setTime, extraArgs=[False])
+        self.chooseFadeButton = DirectButton(relief=None, geom=((browseButtonUp,
+                                                            browseButtonDown,
+                                                            browseButtonUp,
+                                                            browseButtonHover)), parent=aspect2d, text='Browse', text_font=loader.loadFont('models/fonts/ImpressBT.ttf'), scale=(1.5, 4, 0.75), text_scale=(0.2, 0.4, 1), pos=(1.9, 0, -0.3), text_pos=(0, -0.1, 0), geom_color=(0, 0.52, 0.86, 1), text_fg=(1, 1, 1, 1), command=self.selectFadeFile)
+
+        self.maxTime = OnscreenText(parent=aspect2d, text='', font=loader.loadFont('models/fonts/ImpressBT.ttf'), scale=0.25, pos=(1.75, -0.05), fg=(1, 1, 1, 1))
+        self.currentTime = OnscreenText(parent=aspect2d, text='', font=loader.loadFont('models/fonts/ImpressBT.ttf'), scale=0.25, pos=(-1.75, -0.05), fg=(1, 1, 1, 1))
+
+        self.scrubber = DirectSlider(range=(0,100), scale=(2, 1, 1), pos=(0, 1, 0.3), geom=self.scrubberBar, geom_scale=(0.5, 1, 1), relief=None, thumb_geom=self.scrubberButton, thumb_geom_scale=(0.25, 0.25, 0.25), thumb_frameSize=(-0.1, 0.1, -0.1, 0.1), thumb_relief=None, thumb_command=self.setTime, thumb_extraArgs=[True], value=0, pageSize=100, command=self.setTime, extraArgs=[False])
         self.scrubber.hide()
 
     def selectFile(self):
@@ -72,22 +84,91 @@ class MusicApp(ShowBase):
             if filename and not filename == '/':
                 file = filename[0]
                 file = filename.replace('%s:/' % (file), '/%s/' % (file.lower()))
-                self.loadMusicFile(file)
+                self.loadMusicFile(True, file)
                 self.playButton['state'] = DGG.NORMAL
-        if self.mySound:
-            self.mySound.play()
+
+    def selectFadeFile(self):
+        if self.myFadeSound:
+            time = self.myFadeSound.getTime()
+            self.myFadeSound.stop()
+            self.myFadeSound.setTime(time)
+        app = QtWidgets.QApplication(sys.argv)
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(None, 'Open File', r"", ("Audio Files (*.ogg *.mp3)"))
+        if sys.platform == 'win32':
+            if filename and not filename == '/':
+                file = filename[0]
+                file = filename.replace('%s:/' % (file), '/%s/' % (file.lower()))
+                self.loadMusicFile(False, file)
+                self.playButton['state'] = DGG.NORMAL
+
+    def musicVolCont1(self, t):
+        self.mySound.setVolume(t)
+    
+    def musicVolCont2(self, t):
+        self.myFadeSound.setVolume(t)
+
+    def musicFadeIn(self):
+        if self.myFadeSound:
+            if self.mySound.getVolume() == 1:
+                phase1 = LerpFunc(self.musicVolCont1,
+                            fromData=1,
+                            toData=0,
+                            duration=2,
+                            blendType='easeIn',
+                            extraArgs=[],
+                            name=None)
+                
+                phase2 = LerpFunc(self.musicVolCont2,
+                            fromData=0,
+                            toData=1,
+                            duration=2,
+                            blendType='easeIn',
+                            extraArgs=[],
+                            name=None)
+            else:
+                phase1 = LerpFunc(self.musicVolCont2,
+                            fromData=1,
+                            toData=0,
+                            duration=2,
+                            blendType='easeIn',
+                            extraArgs=[],
+                            name=None)
+                
+                phase2 = LerpFunc(self.musicVolCont1,
+                            fromData=0,
+                            toData=1,
+                            duration=2,
+                            blendType='easeIn',
+                            extraArgs=[],
+                            name=None)
+            phase1.start()
+            phase2.start()
+        else:
+            print('Second sound to fade into has not been specified!')
 
     def pauseMusic(self):
-        time = self.mySound.getTime()
+        timeSound = self.mySound.getTime()
         self.mySound.stop()
-        self.mySound.setTime(time)
+        self.mySound.setTime(timeSound)
+
+        if self.myFadeSound:
+            timeFade = self.mySound.getTime()
+            self.myFadeSound.stop()
+            self.myFadeSound.setTime(timeFade)
 
     def setMusicStatus(self):
         status = self.mySound.status()
         if status == self.mySound.PLAYING:
             self.pauseMusic()
-        else:
+        elif self.mySound:
+            taskMgr.add(self.calculateSoundTime)
+            self.calculateSoundLength()
+            self.scrubber['range'] = (0,self.mySound.length())
+            taskMgr.add(self.scrubberValueOverTime)
+            self.scrubber.show()
             self.mySound.play()
+            if self.myFadeSound:
+                self.myFadeSound.play()
 
     def calculateSoundLength(self):
         m, s = divmod(self.mySound.length(), 60)
@@ -115,7 +196,14 @@ class MusicApp(ShowBase):
         return Task.cont
 
     def setTime(self, status):
-        if status:
+        if status and self.myFadeSound:
+            self.mySound.stop()
+            self.myFadeSound.stop()
+            self.mySound.setTime(self.scrubber['value'])
+            self.myFadeSound.setTime(self.scrubber['value'])
+            self.mySound.play()
+            self.myFadeSound.play()
+        elif status and not self.myFadeSound:
             self.mySound.stop()
             self.mySound.setTime(self.scrubber['value'])
             self.mySound.play()
@@ -124,19 +212,18 @@ class MusicApp(ShowBase):
         self.scrubber['value'] = self.mySound.getTime()
         return Task.cont
 
-    def loadMusicFile(self, filename):
-        self.mySound = base.loader.loadMusic(filename)
-        taskMgr.add(self.calculateSoundTime)
-        self.calculateSoundLength()
-        self.scrubber['range'] = (0,self.mySound.length())
-        taskMgr.add(self.scrubberValueOverTime)
-        self.scrubber.show()
-        self.playMusic()
+    def loadMusicFile(self, main, filename):
+        if main and not self.mySound:
+            self.mySound = base.loader.loadMusic(filename)
+            self.mySound.setVolume(1)
+            self.playMusic(self.mySound)
+        elif not self.myFadeSound:
+            self.myFadeSound = base.loader.loadMusic(filename)
+            self.myFadeSound.setVolume(0)
+            self.playMusic(self.myFadeSound)
 
-    def playMusic(self):
-        self.mySound.setLoop(True)
-        self.mySound.setVolume(1)
-        self.mySound.play()
+    def playMusic(self, sound):
+        sound.setLoop(True)
 
 app = MusicApp()
 try:

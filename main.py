@@ -1,13 +1,13 @@
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
-from panda3d.core import loadPrcFile, VirtualFileSystem, Filename, Loader
+from panda3d.core import loadPrcFileData, VirtualFileSystem, Filename, Loader
 from direct.interval.IntervalGlobal import LerpFunc
 from direct.gui.DirectGui import *
 from PyQt5 import QtWidgets
 import sys
 
-'''Setup the Panda3D environment with our config file'''
-loadPrcFile('main.prc')
+'''Setup the Panda3D environment with our config data'''
+loadPrcFileData('config', 'window-title Panda3D Music Player\nload-display pandagl\nwin-size 400 160\nwin-fixed-size 1\ndefault-model-extension .bam')
 
 class MusicApp(ShowBase):
 
